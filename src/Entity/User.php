@@ -6,6 +6,7 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -18,6 +19,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: "Le nom d'utilisateur est obligatoire")]
+    #[Assert\Length(
+        min: 4,
+        max: 180,
+        minMessage: "Le login doit contenir au moins {{ limit }} caractères",
+        maxMessage: "Le login ne peut pas dépasser {{ limit }} caractères"
+    )]
     private ?string $username = null;
 
     /**
@@ -30,10 +38,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Assert\NotBlank(message: "Le mot de passe est obligatoire")]
+    #[Assert\Length(
+        min: 6,
+        max: 255,
+        minMessage: "Le mot de passe doit contenir au moins {{ limit }} caractères",
+        maxMessage: "Le mot de passe ne peut pas dépasser {{ limit }} caractères"
+    )]
     private ?string $password = null;
 
-    #[ORM\Column]
-    private ?int $city = null;
+    #[ORM\Column(length: 5)]
+    #[Assert\NotBlank(message: "Le code postal est obligatoire.")]
+    #[Assert\Regex(
+        pattern: '/^\d{5}$/',
+        message: "Le code postal doit contenir exactement 5 chiffres."
+    )]
+    private ?string $city = null;
 
     public function getId(): ?int
     {
@@ -116,12 +136,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // @deprecated, to be removed when upgrading to Symfony 8
     }
 
-    public function getCity(): ?int
+    public function getCity(): ?string
     {
         return $this->city;
     }
 
-    public function setCity(int $city): static
+    public function setCity(string $city): static
     {
         $this->city = $city;
 
