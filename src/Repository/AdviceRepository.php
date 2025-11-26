@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Advice;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Exception;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,28 +17,32 @@ class AdviceRepository extends ServiceEntityRepository
         parent::__construct($registry, Advice::class);
     }
 
-    //    /**
-    //     * @return Advice[] Returns an array of Advice objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * @throws Exception
+     */
+    public function getAdvicesOfTheMonth(): array
+   {
+       $conn = $this->getEntityManager()->getConnection();
+       $month = (int) (new \DateTime())->format('n');
 
-    //    public function findOneBySomeField($value): ?Advice
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+       $sql = 'SELECT * FROM advice WHERE months @> :month::jsonb';
+
+       return $conn->executeQuery($sql, [
+           'month' => json_encode([$month])
+       ])->fetchAllAssociative();
+   }
+
+    /**
+     * @throws Exception
+     */
+    public function getAdvicesByMonth($month): array
+   {
+       $conn = $this->getEntityManager()->getConnection();
+
+       $sql = 'SELECT * FROM advice WHERE months @> :month::jsonb';
+
+       return $conn->executeQuery($sql, [
+           'month' => json_encode([$month])
+       ])->fetchAllAssociative();
+   }
 }

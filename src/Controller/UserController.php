@@ -26,8 +26,7 @@ final class UserController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator,
         UserPasswordHasherInterface $passwordHasher,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
 
         $errors = $validator->validate($user);
