@@ -18,7 +18,7 @@ final class AdviceController extends AbstractController
      * @throws ExceptionInterface
      * @throws Exception
      */
-    #[Route('/api/conseil', name: 'advice_collection', methods: ['GET'])]
+    #[Route('/api/advice', name: 'advice_collection', methods: ['GET'])]
     public function getCurrentMonthAdvices(
         SerializerInterface $serializer,
         AdviceRepository $adviceRepository
@@ -34,8 +34,12 @@ final class AdviceController extends AbstractController
      * @throws ExceptionInterface
      * @throws Exception
      */
-    #[Route('/api/conseil/{month}', name: 'advice_item', methods: ['GET'])]
-    public function getAdvicesByMonth(SerializerInterface $serializer, AdviceRepository $adviceRepository, int $month): JsonResponse
+    #[Route('/api/advice/{month}', name: 'advice_item', methods: ['GET'])]
+    public function getAdvicesByMonth(
+        SerializerInterface $serializer,
+        AdviceRepository $adviceRepository,
+        int $month
+    ): JsonResponse
     {
         $adviceList = $adviceRepository->getAdvicesByMonth($month);
         $jsonAdviceList = $serializer->serialize($adviceList, 'json');
