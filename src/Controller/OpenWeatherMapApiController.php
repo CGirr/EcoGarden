@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +14,6 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class OpenWeatherMapApiController extends AbstractController
@@ -53,11 +53,31 @@ final class OpenWeatherMapApiController extends AbstractController
 
     #[Route('/api/weather', name: 'weather', methods: ['GET'])]
     public function getWeather(
-        UserRepository $userRepository,
         HttpClientInterface $httpClient,
         TagAwareCacheInterface $cache
     ): JsonResponse
     {
+        /** @var User $user */
+        $user = $this->getUser();
+        $city = $user->getCity();
 
+        $cacheKey = "weather" . $city;
+        $weatherData = $cache->get($cacheKey, function (ItemInterface $item) use ($city, $httpClient) {
+            $apiKey = '***REMOVED***';
+            $item->expiresAfter(3600);
+
+            $url = sprintf(
+                'https://api.openweathermap.org/data/2.5/weather?zip=%s,fr&lang=fr&appid=%s&units=metric',
+                $city,
+                $apiKey,
+            );
+
+            $response = $httpClient->request('GET', $url);
+
+            return $response->getContent();
+        });
+
+
+        return new JsonResponse($weatherData, Response::HTTP_OK, [], true);
     }
 }
