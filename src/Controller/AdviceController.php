@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -54,6 +55,7 @@ final class AdviceController extends AbstractController
      * @throws ExceptionInterface
      */
     #[Route('api/advice', name: 'create_advice', methods: ['POST'])]
+    #[isGranted('ROLE_ADMIN')]
     public function createAdvice(
         SerializerInterface $serializer,
         Request $request,
@@ -70,6 +72,7 @@ final class AdviceController extends AbstractController
     }
 
     #[Route('/api/advice/{id}', name: 'edit_advice', methods: ['PUT'])]
+    #[isGranted('ROLE_ADMIN')]
     public function editAdvice(
         SerializerInterface $serializer,
         Request $request,
@@ -83,18 +86,21 @@ final class AdviceController extends AbstractController
            'json',
         [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAdvice]
        );
-       $entityManager->persist($updatedAdvice);
+
        $entityManager->flush();
 
-       return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+       $updatedJsonAdvice = $serializer->serialize($updatedAdvice, 'json');
+
+       return new JsonResponse($updatedJsonAdvice, Response::HTTP_OK, [], true);
     }
 
     #[Route('/api/advice/{id}', name: 'delete_advice', methods: ['DELETE'])]
+    #[isGranted('ROLE_ADMIN')]
     public function deleteAdvice(EntityManagerInterface $entityManager, Advice $advice) : JsonResponse
     {
         $entityManager->remove($advice);
         $entityManager->flush();
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        return new JsonResponse(['message' => 'Conseil supprimé avec succès'], Response::HTTP_OK);
     }
 }
