@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Advice;
 use App\Repository\AdviceRepository;
+use App\Service\ValidatorService;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,6 +16,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class AdviceController extends AbstractController
 {
@@ -42,9 +44,12 @@ final class AdviceController extends AbstractController
     public function getAdvicesByMonth(
         SerializerInterface $serializer,
         AdviceRepository $adviceRepository,
+        ValidatorService $validator,
         int $month
     ): JsonResponse
     {
+        $month = $validator->validateMonth($month);
+
         $adviceList = $adviceRepository->getAdvicesByMonth($month);
         $jsonAdviceList = $serializer->serialize($adviceList, 'json');
 
@@ -59,10 +64,14 @@ final class AdviceController extends AbstractController
     public function createAdvice(
         SerializerInterface $serializer,
         Request $request,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        ValidatorService $validatorService
     ) : JsonResponse
     {
         $advice = $serializer->deserialize($request->getContent(), Advice::class, 'json');
+
+        $validatorService->validateEntity($advice);
+
         $entityManager->persist($advice);
         $entityManager->flush();
 
@@ -77,7 +86,8 @@ final class AdviceController extends AbstractController
         SerializerInterface $serializer,
         Request $request,
         EntityManagerInterface $entityManager,
-        Advice $currentAdvice
+        Advice $currentAdvice,
+        ValidatorService  $validatorService
     ) : JsonResponse
     {
        $updatedAdvice = $serializer->deserialize(
@@ -86,6 +96,8 @@ final class AdviceController extends AbstractController
            'json',
         [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAdvice]
        );
+
+       $validatorService->validateEntity($updatedAdvice);
 
        $entityManager->flush();
 
