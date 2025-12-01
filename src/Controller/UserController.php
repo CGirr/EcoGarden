@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\ValidatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,7 +15,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UserController extends AbstractController
 {
@@ -26,20 +26,12 @@ final class UserController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $entityManager,
-        ValidatorInterface $validator,
+        ValidatorService $validatorService,
         UserPasswordHasherInterface $passwordHasher,
     ): JsonResponse {
         $user = $serializer->deserialize($request->getContent(), User::class, 'json');
 
-        $errors = $validator->validate($user);
-        if (count($errors) > 0) {
-            return new JsonResponse(
-                $serializer->serialize($errors, 'json'),
-                Response::HTTP_BAD_REQUEST,
-                [],
-                true
-            );
-        }
+        $validatorService->validateEntity($user);
 
         $user->setPassword(
             $passwordHasher->hashPassword($user, $user->getPassword())
@@ -53,7 +45,10 @@ final class UserController extends AbstractController
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
 
-    #[Route('/api/user/{id}', name: 'update_user', methods: ['PUT'])]
+    /**
+     * @throws ExceptionInterface
+     */
+    #[Route('/api/user/{id}', name: 'update_user', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[IsGranted("ROLE_ADMIN")]
     public function updateUser(
         SerializerInterface $serializer,
@@ -61,11 +56,11 @@ final class UserController extends AbstractController
         EntityManagerInterface $entityManager,
         User $currentUser,
         UserPasswordHasherInterface $passwordHasher,
+        ValidatorService $validatorService
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
         $plainPassword = $data['password'] ?? null;
-        unset($data['password']);
 
         $updatedUser = $serializer->deserialize(
             json_encode($data),
@@ -74,11 +69,21 @@ final class UserController extends AbstractController
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]
         );
 
-        if($plainPassword) {
+        if (array_key_exists('password', $data)) {
+            $updatedUser->setPlainPassword($plainPassword);
+
+            $validatorService->validateEntity($updatedUser, ['password_update']);
+
             $updatedUser->setPassword(
                 $passwordHasher->hashPassword($updatedUser, $plainPassword)
             );
+
+            $updatedUser->setPlainPassword(null);
         }
+
+        unset($data['password']);
+
+        $validatorService->validateEntity($updatedUser);
 
         $entityManager->flush();
 
@@ -87,10 +92,10 @@ final class UserController extends AbstractController
         return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/api/user/{id}', name: 'delete_user', methods: ['DELETE'])]
-    public function deleteUser(EntityManagerInterface $entityManager, User $User): JsonResponse
+    #[Route('/api/user/{id}', name: 'delete_user', requirements: ['id' => '\d+'],  methods: ['DELETE'])]
+    public function deleteUser(EntityManagerInterface $entityManager, User $user): JsonResponse
     {
-        $entityManager->remove($User);
+        $entityManager->remove($user);
         $entityManager->flush();
 
         return new JsonResponse(['message' => 'Utilisateur supprimé avec succès'], Response::HTTP_OK);

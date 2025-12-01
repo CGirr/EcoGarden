@@ -50,6 +50,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         maxMessage: "Le mot de passe ne peut pas dépasser {{ limit }} caractères"
     )]
     private ?string $password = null;
+    #[Assert\NotBlank(
+        message: "Le mot de passe ne peut pas être vide",
+        groups: ['password_update']
+    )]
+    #[Assert\Length(
+        min: 6,
+        max: 255,
+        minMessage: "Le mot de passe doit contenir au moins {{ limit }} caractères",
+        maxMessage: "Le mot de passe ne peut pas dépasser {{ limit }} caractères",
+        groups: ['password_update']
+    )]
+    private ?string $plainPassword = null;
 
     #[Groups(['user_read'])]
     #[ORM\Column(length: 5)]
@@ -122,6 +134,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->password = $password;
 
         return $this;
+    }
+
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): void
+    {
+        $this->plainPassword = $plainPassword;
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Advice;
 use App\Repository\AdviceRepository;
+use App\Service\ValidatorService;
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,13 +39,16 @@ final class AdviceController extends AbstractController
      * @throws ExceptionInterface
      * @throws Exception
      */
-    #[Route('/api/advice/{month}', name: 'advice_item', methods: ['GET'])]
+    #[Route('/api/advice/{month}', name: 'advice_item', requirements: ['month' => '\d+'], methods: ['GET'])]
     public function getAdvicesByMonth(
         SerializerInterface $serializer,
         AdviceRepository $adviceRepository,
+        ValidatorService $validator,
         int $month
     ): JsonResponse
     {
+        $month = $validator->validateMonth($month);
+
         $adviceList = $adviceRepository->getAdvicesByMonth($month);
         $jsonAdviceList = $serializer->serialize($adviceList, 'json');
 
@@ -59,10 +63,14 @@ final class AdviceController extends AbstractController
     public function createAdvice(
         SerializerInterface $serializer,
         Request $request,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        ValidatorService $validatorService
     ) : JsonResponse
     {
         $advice = $serializer->deserialize($request->getContent(), Advice::class, 'json');
+
+        $validatorService->validateEntity($advice);
+
         $entityManager->persist($advice);
         $entityManager->flush();
 
@@ -71,13 +79,14 @@ final class AdviceController extends AbstractController
         return new JsonResponse($jsonAdvice, Response::HTTP_CREATED, [], true);
     }
 
-    #[Route('/api/advice/{id}', name: 'edit_advice', methods: ['PUT'])]
+    #[Route('/api/advice/{id}', name: 'edit_advice', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[isGranted('ROLE_ADMIN')]
     public function editAdvice(
         SerializerInterface $serializer,
         Request $request,
         EntityManagerInterface $entityManager,
-        Advice $currentAdvice
+        Advice $currentAdvice,
+        ValidatorService  $validatorService
     ) : JsonResponse
     {
        $updatedAdvice = $serializer->deserialize(
@@ -87,6 +96,8 @@ final class AdviceController extends AbstractController
         [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAdvice]
        );
 
+       $validatorService->validateEntity($updatedAdvice);
+
        $entityManager->flush();
 
        $updatedJsonAdvice = $serializer->serialize($updatedAdvice, 'json');
@@ -94,7 +105,7 @@ final class AdviceController extends AbstractController
        return new JsonResponse($updatedJsonAdvice, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/api/advice/{id}', name: 'delete_advice', methods: ['DELETE'])]
+    #[Route('/api/advice/{id}', name: 'delete_advice', requirements: ['id' => '\d+'], methods: ['DELETE'])]
     #[isGranted('ROLE_ADMIN')]
     public function deleteAdvice(EntityManagerInterface $entityManager, Advice $advice) : JsonResponse
     {
