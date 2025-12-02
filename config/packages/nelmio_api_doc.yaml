@@ -1,0 +1,37 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: API EcoGarden
+            description: Manage advices, users and get weather for a specified location
+            version: 1.0.0
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
+        paths:
+            /api/auth:
+                post:
+                    tags:
+                        - authentication
+                    summary: Get JWT token
+                    requestBody:
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        username:
+                                            type: string
+                                        password:
+                                            type: string
+                    responses:
+                        '200':
+                            description: JWT token
+
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api(?!/doc$) # Accepts routes under /api except /api/doc

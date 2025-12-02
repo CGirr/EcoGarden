@@ -15,6 +15,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use OpenApi\Attributes as OA;
 
 final class UserController extends AbstractController
 {
@@ -28,6 +29,23 @@ final class UserController extends AbstractController
      * @throws ExceptionInterface
      */
     #[Route('/api/user', name: 'create_user', methods: ['POST'])]
+    #[OA\Post(
+        description: 'Create a new user',
+        summary: 'Create user',
+        tags: ['user'],
+    )]
+    #[OA\Response(response: 201, description: 'Created a new user')]
+    #[OA\RequestBody(
+        description: 'User data',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'username', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+                new OA\Property(property: 'city', type: 'string'),
+            ]
+        )
+    )]
     public function createUser(
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
@@ -39,6 +57,7 @@ final class UserController extends AbstractController
         $user->setPassword(
             $passwordHasher->hashPassword($user, $user->getPassword())
         );
+        $user->setRoles(['ROLE_USER']);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -51,6 +70,18 @@ final class UserController extends AbstractController
      */
     #[Route('/api/user/{id}', name: 'update_user', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[IsGranted("ROLE_ADMIN")]
+    #[OA\Put(
+        description: 'Update the specified user',
+        summary: 'Update user',
+        tags: ['user'],
+    )]
+    #[OA\Response(response: 200, description: 'Updated the specified user')]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'id of the user',
+        in: 'path',
+        required: true,
+    )]
     public function updateUser(
         Request $request,
         User $currentUser,
@@ -87,6 +118,18 @@ final class UserController extends AbstractController
 
     #[Route('/api/user/{id}', name: 'delete_user', requirements: ['id' => '\d+'],  methods: ['DELETE'])]
     #[IsGranted("ROLE_ADMIN")]
+    #[OA\Delete(
+        description: 'Delete the specified user',
+        summary: 'Delete user',
+        tags: ['user'],
+    )]
+    #[OA\Response(response: 204, description: 'Deleted the specified user')]
+    #[OA\Parameter(
+        name: 'id',
+        description: 'id of the user',
+        in: 'path',
+        required: true,
+    )]
     public function deleteUser(User $user): JsonResponse
     {
         $this->entityManager->remove($user);
