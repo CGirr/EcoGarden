@@ -40,7 +40,7 @@ final class UserController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
 
-        $jsonUser = $serializer->serialize($user, 'json');
+        $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'user_read']);
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
@@ -93,6 +93,7 @@ final class UserController extends AbstractController
     }
 
     #[Route('/api/user/{id}', name: 'delete_user', requirements: ['id' => '\d+'],  methods: ['DELETE'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function deleteUser(EntityManagerInterface $entityManager, User $user): JsonResponse
     {
         $entityManager->remove($user);

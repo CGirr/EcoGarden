@@ -58,7 +58,7 @@ final class AdviceController extends AbstractController
     /**
      * @throws ExceptionInterface
      */
-    #[Route('api/advice', name: 'create_advice', methods: ['POST'])]
+    #[Route('/api/advice', name: 'create_advice', methods: ['POST'])]
     #[isGranted('ROLE_ADMIN')]
     public function createAdvice(
         SerializerInterface $serializer,
