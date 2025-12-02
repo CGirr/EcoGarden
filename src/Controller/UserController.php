@@ -18,31 +18,32 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 final class UserController extends AbstractController
 {
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        private readonly ValidatorService $validator,
+        private readonly EntityManagerInterface $entityManager,
+    ) {}
+
     /**
      * @throws ExceptionInterface
      */
     #[Route('/api/user', name: 'create_user', methods: ['POST'])]
     public function createUser(
         Request $request,
-        SerializerInterface $serializer,
-        EntityManagerInterface $entityManager,
-        ValidatorService $validatorService,
         UserPasswordHasherInterface $passwordHasher,
     ): JsonResponse {
-        $user = $serializer->deserialize($request->getContent(), User::class, 'json');
+        $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
 
-        $validatorService->validateEntity($user);
+        $this->validator->validateEntity($user);
 
         $user->setPassword(
             $passwordHasher->hashPassword($user, $user->getPassword())
         );
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
-        $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'user_read']);
-
-        return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
+        return $this->json($user, Response::HTTP_CREATED, [], ['groups' => 'user_read']);
     }
 
     /**
@@ -51,18 +52,15 @@ final class UserController extends AbstractController
     #[Route('/api/user/{id}', name: 'update_user', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[IsGranted("ROLE_ADMIN")]
     public function updateUser(
-        SerializerInterface $serializer,
         Request $request,
-        EntityManagerInterface $entityManager,
         User $currentUser,
         UserPasswordHasherInterface $passwordHasher,
-        ValidatorService $validatorService
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
         $plainPassword = $data['password'] ?? null;
 
-        $updatedUser = $serializer->deserialize(
+        $updatedUser = $this->serializer->deserialize(
             json_encode($data),
             User::class,
             'json',
@@ -72,7 +70,7 @@ final class UserController extends AbstractController
         if (array_key_exists('password', $data)) {
             $updatedUser->setPlainPassword($plainPassword);
 
-            $validatorService->validateEntity($updatedUser, ['password_update']);
+            $this->validator->validateEntity($updatedUser, ['password_update']);
 
             $updatedUser->setPassword(
                 $passwordHasher->hashPassword($updatedUser, $plainPassword)
@@ -81,24 +79,19 @@ final class UserController extends AbstractController
             $updatedUser->setPlainPassword(null);
         }
 
-        unset($data['password']);
+        $this->validator->validateEntity($updatedUser);
+        $this->entityManager->flush();
 
-        $validatorService->validateEntity($updatedUser);
-
-        $entityManager->flush();
-
-        $jsonUser = $serializer->serialize($updatedUser, 'json', ['groups' => 'user_read']);
-
-        return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
+        return $this->json($updatedUser, Response::HTTP_OK, [], ['groups' => 'user_read']);
     }
 
     #[Route('/api/user/{id}', name: 'delete_user', requirements: ['id' => '\d+'],  methods: ['DELETE'])]
     #[IsGranted("ROLE_ADMIN")]
-    public function deleteUser(EntityManagerInterface $entityManager, User $user): JsonResponse
+    public function deleteUser(User $user): JsonResponse
     {
-        $entityManager->remove($user);
-        $entityManager->flush();
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
 
-        return new JsonResponse(['message' => 'Utilisateur supprimé avec succès'], Response::HTTP_OK);
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }

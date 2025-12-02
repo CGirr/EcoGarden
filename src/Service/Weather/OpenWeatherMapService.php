@@ -18,8 +18,7 @@ class OpenWeatherMapService implements WeatherEcoGardenInterface
         private readonly HttpClientInterface $httpClient,
         private readonly TagAwareCacheInterface $cache,
         private readonly string $apiKey
-    ) {
-    }
+    ) {}
 
     /**
      * @param string $city
