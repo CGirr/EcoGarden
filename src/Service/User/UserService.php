@@ -17,9 +17,12 @@ class UserService
 
     public function createUser(User $user): User
     {
-        $user->setPassword($this->userPasswordHasher->hashPassword($user, $user->getPassword()));
+        $user->setPlainPassword($user->getPassword());
         $user->setRoles(['ROLE_USER']);
         $this->validatorService->validateEntity($user);
+        $user->setPassword($this->userPasswordHasher->hashPassword($user, $user->getPlainPassword()));
+        $user->setPlainPassword(null);
+
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 

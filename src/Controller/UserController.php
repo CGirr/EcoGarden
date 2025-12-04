@@ -68,6 +68,17 @@ final class UserController extends AbstractController
         in: 'path',
         required: true,
     )]
+    #[OA\RequestBody(
+        description: 'User data (all fields optional)',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'username', type: 'string'),
+                new OA\Property(property: 'password', type: 'string'),
+                new OA\Property(property: 'city', type: 'string'),
+            ]
+        )
+    )]
     public function updateUser(Request $request, User $currentUser): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
