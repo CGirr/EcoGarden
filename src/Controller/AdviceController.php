@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Advice;
 use App\Service\Advice\AdviceService;
-use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

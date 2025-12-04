@@ -7,12 +7,12 @@ use App\Repository\AdviceRepository;
 use App\Service\ValidatorService;
 use Doctrine\ORM\EntityManagerInterface;
 
-class AdviceService
+readonly class AdviceService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly AdviceRepository $adviceRepository,
-        private readonly ValidatorService $validatorService
+        private EntityManagerInterface $entityManager,
+        private AdviceRepository $adviceRepository,
+        private ValidatorService $validatorService
     ) {}
 
     public function getAdvicesForCurrentMonth(): array

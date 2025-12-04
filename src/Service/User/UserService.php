@@ -7,12 +7,12 @@ use App\Service\ValidatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class UserService
+readonly class UserService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly UserPasswordHasherInterface $userPasswordHasher,
-        private readonly ValidatorService $validatorService
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $userPasswordHasher,
+        private ValidatorService $validatorService
     ) {}
 
     public function createUser(User $user): User

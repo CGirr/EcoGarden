@@ -11,13 +11,13 @@ use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class OpenWeatherMapService implements WeatherEcoGardenInterface
+readonly class OpenWeatherMapService implements WeatherEcoGardenInterface
 {
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
-        private readonly TagAwareCacheInterface $cache,
-        private readonly string $apiKey
+        private HttpClientInterface $httpClient,
+        private TagAwareCacheInterface $cache,
+        private string $apiKey
     ) {}
 
     /**
@@ -55,12 +55,12 @@ class OpenWeatherMapService implements WeatherEcoGardenInterface
                     default => $e->getMessage(),
                 };
                 throw new WeatherException($statusCode, $message);
-            } catch (TransportExceptionInterface $e) {
+            } catch (TransportExceptionInterface) {
                 throw new WeatherException(503, 'Service météo indisponible');
             }
         });
 
-        return $this->mapToModel($data, $city);
+        return $this->mapToModel($data);
     }
 
     private function mapToModel(array $data): WeatherEcoGardenModel
