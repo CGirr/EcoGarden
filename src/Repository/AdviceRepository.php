@@ -22,20 +22,15 @@ class AdviceRepository extends ServiceEntityRepository
      */
     public function getAdvicesOfTheMonth(): array
    {
-       $conn = $this->getEntityManager()->getConnection();
        $month = (int) (new \DateTime())->format('n');
 
-       $sql = 'SELECT * FROM advice WHERE months @> :month::jsonb';
-
-       return $conn->executeQuery($sql, [
-           'month' => json_encode([$month])
-       ])->fetchAllAssociative();
+       return $this->getAdvicesByMonth($month);
    }
 
     /**
      * @throws Exception
      */
-    public function getAdvicesByMonth($month): array
+    public function getAdvicesByMonth(int $month): array
    {
        $conn = $this->getEntityManager()->getConnection();
 
