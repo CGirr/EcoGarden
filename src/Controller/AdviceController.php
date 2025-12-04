@@ -3,10 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Advice;
-use App\Repository\AdviceRepository;
-use App\Service\ValidatorService;
+use App\Service\Advice\AdviceService;
 use Doctrine\DBAL\Exception;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,15 +20,9 @@ final class AdviceController extends AbstractController
 {
     public function __construct(
         private readonly SerializerInterface $serializer,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly AdviceRepository $adviceRepository,
-        private readonly ValidatorService $validatorService
-    ) {
-    }
+        private readonly AdviceService $adviceService,
+    ) {}
 
-    /**
-     * @throws Exception
-     */
     #[Route('/api/advice', name: 'advice_collection', methods: ['GET'])]
     #[OA\Get(
         description: 'Get the advices for the current month',
@@ -40,14 +32,11 @@ final class AdviceController extends AbstractController
     #[OA\Response(response: 200, description: 'List of advices for the current month')]
     public function getCurrentMonthAdvices(): JsonResponse
     {
-        $adviceList = $this->adviceRepository->getAdvicesOfTheMonth();
+        $adviceList = $this->adviceService->getAdvicesForCurrentMonth();
 
         return $this->json($adviceList);
     }
 
-    /**
-     * @throws Exception
-     */
     #[Route('/api/advice/{month}', name: 'advice_item', requirements: ['month' => '\d+'], methods: ['GET'])]
     #[OA\Get(
         description: 'Get the advices for a specific month',
@@ -63,8 +52,7 @@ final class AdviceController extends AbstractController
     )]
     public function getAdvicesByMonth(int $month): JsonResponse
     {
-        $month = $this->validatorService->validateMonth($month);
-        $adviceList = $this->adviceRepository->getAdvicesByMonth($month);
+        $adviceList = $this->adviceService->getAdvicesByMonth($month);
 
         return $this->json($adviceList);
     }
@@ -93,10 +81,7 @@ final class AdviceController extends AbstractController
     public function createAdvice(Request $request): JsonResponse
     {
         $advice = $this->serializer->deserialize($request->getContent(), Advice::class, 'json');
-
-        $this->validatorService->validateEntity($advice);
-        $this->entityManager->persist($advice);
-        $this->entityManager->flush();
+        $this->adviceService->createAdvice($advice);
 
         return $this->json($advice, Response::HTTP_CREATED);
     }
@@ -111,6 +96,16 @@ final class AdviceController extends AbstractController
         in: 'path',
         required: true,
     )]
+    #[OA\RequestBody(
+        description: 'Advice data (all fields optional)',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'description', type: 'string'),
+                new OA\Property(property: 'months', type: 'array', items: new OA\Items(type: 'integer')),
+            ]
+        )
+    )]
     public function editAdvice(Request $request, Advice $currentAdvice): JsonResponse
     {
         $updatedAdvice = $this->serializer->deserialize(
@@ -120,8 +115,7 @@ final class AdviceController extends AbstractController
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAdvice]
         );
 
-        $this->validatorService->validateEntity($updatedAdvice);
-        $this->entityManager->flush();
+        $this->adviceService->updateAdvice($updatedAdvice);
 
         return $this->json($updatedAdvice, Response::HTTP_OK);
     }
@@ -138,8 +132,7 @@ final class AdviceController extends AbstractController
     )]
     public function deleteAdvice(Advice $advice): JsonResponse
     {
-        $this->entityManager->remove($advice);
-        $this->entityManager->flush();
+       $this->adviceService->deleteAdvice($advice);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
