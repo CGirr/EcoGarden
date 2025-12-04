@@ -106,7 +106,7 @@ final class AdviceController extends AbstractController
             ]
         )
     )]
-    public function editAdvice(Request $request, Advice $currentAdvice): JsonResponse
+    public function updateAdvice(Request $request, Advice $currentAdvice): JsonResponse
     {
         $updatedAdvice = $this->serializer->deserialize(
             $request->getContent(),
