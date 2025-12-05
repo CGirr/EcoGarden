@@ -4,31 +4,34 @@ namespace App\Service\Advice;
 
 use App\Entity\Advice;
 use App\Repository\AdviceRepository;
-use App\Service\ValidatorService;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 
 readonly class AdviceService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private AdviceRepository $adviceRepository,
-        private ValidatorService $validatorService
+        private AdviceRepository $adviceRepository
     ) {}
 
+    /**
+     * @throws Exception
+     */
     public function getAdvicesForCurrentMonth(): array
     {
         return $this->adviceRepository->getAdvicesOfTheMonth();
     }
 
+    /**
+     * @throws Exception
+     */
     public function getAdvicesByMonth(int $month): array
     {
-        $this->validatorService->validateMonth($month);
         return $this->adviceRepository->getAdvicesByMonth($month);
     }
 
     public function createAdvice(Advice $advice): Advice
     {
-        $this->validatorService->validateEntity($advice);
         $this->entityManager->persist($advice);
         $this->entityManager->flush();
 
@@ -37,7 +40,6 @@ readonly class AdviceService
 
     public function updateAdvice(Advice $advice): Advice
     {
-        $this->validatorService->validateEntity($advice);
         $this->entityManager->flush();
 
         return $advice;

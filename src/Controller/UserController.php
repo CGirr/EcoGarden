@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\User\UserService;
+use App\Service\ValidatorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,7 +20,8 @@ final class UserController extends AbstractController
 {
     public function __construct(
         private readonly SerializerInterface $serializer,
-        private readonly UserService $userService
+        private readonly UserService $userService,
+        private readonly ValidatorService $validatorService
     ) {}
 
     /**
@@ -46,6 +48,9 @@ final class UserController extends AbstractController
     public function createUser(Request $request): JsonResponse
     {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
+        $user->setPlainPassword($user->getPassword());
+        $this->validatorService->validateEntity($user);
+
         $this->userService->createUser($user);
 
         return $this->json($user, Response::HTTP_CREATED, [], ['groups' => 'user_read']);
@@ -89,6 +94,13 @@ final class UserController extends AbstractController
             'json',
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]
         );
+
+        if ($plainPassword !== null) {
+            $updatedUser->setPlainPassword($plainPassword);
+            $this->validatorService->validateEntity($updatedUser, ['password_update']);
+        }
+        $this->validatorService->validateEntity($updatedUser);
+
         $this->userService->updateUser($updatedUser, $plainPassword);
 
         return $this->json($updatedUser, Response::HTTP_OK, [], ['groups' => 'user_read']);

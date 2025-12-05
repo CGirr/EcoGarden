@@ -18,7 +18,8 @@ readonly class OpenWeatherMapService implements WeatherEcoGardenInterface
         private HttpClientInterface $httpClient,
         private TagAwareCacheInterface $cache,
         private string $apiKey
-    ) {}
+    ) {
+    }
 
     /**
      * @param string $city
@@ -48,15 +49,9 @@ readonly class OpenWeatherMapService implements WeatherEcoGardenInterface
 
                 return $response->toArray();
             } catch (ClientExceptionInterface|ServerExceptionInterface $e) {
-                $statusCode = $e->getResponse()->getStatusCode();
-                $message = match ($statusCode) {
-                    404 => 'Ville non trouvée',
-                    401 => 'Clé API invalide',
-                    default => $e->getMessage(),
-                };
-                throw new WeatherException($statusCode, $message);
+                throw new WeatherException($e->getResponse()->getStatusCode());
             } catch (TransportExceptionInterface) {
-                throw new WeatherException(503, 'Service météo indisponible');
+                throw new WeatherException(503);
             }
         });
 

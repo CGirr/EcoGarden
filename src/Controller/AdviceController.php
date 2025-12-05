@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Advice;
 use App\Service\Advice\AdviceService;
+use App\Service\ValidatorService;
+use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,8 +22,12 @@ final class AdviceController extends AbstractController
     public function __construct(
         private readonly SerializerInterface $serializer,
         private readonly AdviceService $adviceService,
+        private readonly ValidatorService $validatorService
     ) {}
 
+    /**
+     * @throws Exception
+     */
     #[Route('/api/advice', name: 'advice_collection', methods: ['GET'])]
     #[OA\Get(
         description: 'Get the advices for the current month',
@@ -36,6 +42,9 @@ final class AdviceController extends AbstractController
         return $this->json($adviceList);
     }
 
+    /**
+     * @throws Exception
+     */
     #[Route('/api/advice/{month}', name: 'advice_item', requirements: ['month' => '\d+'], methods: ['GET'])]
     #[OA\Get(
         description: 'Get the advices for a specific month',
@@ -51,6 +60,7 @@ final class AdviceController extends AbstractController
     )]
     public function getAdvicesByMonth(int $month): JsonResponse
     {
+        $this->validatorService->validateMonth($month);
         $adviceList = $this->adviceService->getAdvicesByMonth($month);
 
         return $this->json($adviceList);
@@ -80,11 +90,15 @@ final class AdviceController extends AbstractController
     public function createAdvice(Request $request): JsonResponse
     {
         $advice = $this->serializer->deserialize($request->getContent(), Advice::class, 'json');
+        $this->validatorService->validateEntity($advice);
         $this->adviceService->createAdvice($advice);
 
         return $this->json($advice, Response::HTTP_CREATED);
     }
 
+    /**
+     * @throws ExceptionInterface
+     */
     #[Route('/api/advice/{id}', name: 'edit_advice', requirements: ['id' => '\d+'], methods: ['PUT'])]
     #[isGranted('ROLE_ADMIN')]
     #[OA\Put(description: 'Edit a specific advice', summary: 'Edit advice', tags: ['advice'])]
@@ -114,6 +128,7 @@ final class AdviceController extends AbstractController
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentAdvice]
         );
 
+        $this->validatorService->validateEntity($updatedAdvice);
         $this->adviceService->updateAdvice($updatedAdvice);
 
         return $this->json($updatedAdvice, Response::HTTP_OK);
