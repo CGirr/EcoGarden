@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service\Weather;
+namespace App\Exception;
 
 use Symfony\Component\HttpKernel\Exception\HttpException;
 

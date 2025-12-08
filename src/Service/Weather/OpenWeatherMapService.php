@@ -2,6 +2,7 @@
 
 namespace App\Service\Weather;
 
+use App\Exception\WeatherException;
 use App\Service\Weather\Model\WeatherEcoGardenModel;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Contracts\Cache\ItemInterface;

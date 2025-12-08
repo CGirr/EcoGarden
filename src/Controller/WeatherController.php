@@ -3,12 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Exception\WeatherException;
 use App\Service\Weather\WeatherEcoGardenInterface;
-use App\Service\Weather\WeatherException;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use OpenApi\Attributes as OA;
 
 final class WeatherController extends AbstractController
 {
