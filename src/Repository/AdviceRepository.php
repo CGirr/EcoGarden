@@ -34,7 +34,7 @@ class AdviceRepository extends ServiceEntityRepository
    {
        $conn = $this->getEntityManager()->getConnection();
 
-       $sql = 'SELECT * FROM advice WHERE months @> :month::jsonb';
+       $sql = 'SELECT * FROM advice WHERE months::jsonb @> :month::jsonb';
 
        return $conn->executeQuery($sql, [
            'month' => json_encode([$month])

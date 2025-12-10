@@ -24,7 +24,7 @@ class Advice
     )]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'jsonb')]
     #[Assert\NotBlank(message: "Les mois sont obligatoires")]
     #[Assert\Count(min: 1, minMessage: "Vous devez sélectionner au moins {{limit}} mois")]
     #[Assert\All([
